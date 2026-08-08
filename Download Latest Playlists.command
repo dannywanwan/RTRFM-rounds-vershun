@@ -13,7 +13,7 @@ fi
 
 git fetch origin main
 
-playlist_files="$(git ls-tree -r --name-only origin/main | awk '/^(The Rounds|Jamdown Vershun) - .*\.txt$/ { print }')"
+playlist_files="$(git ls-tree -r --name-only origin/main | awk '/^((The Rounds|Jamdown Vershun) - .*\.txt|Playlisty\/.*\.txt)$/ { print }')"
 
 if [ -z "$playlist_files" ]; then
   echo "No Playlisty text files were found on GitHub."

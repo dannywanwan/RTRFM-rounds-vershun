@@ -94,11 +94,15 @@ def save_playlist(show, tracks, playlist_date, output_dir):
 
     dated_path = output_dir / f"{show_name} - {playlist_date:%Y-%m-%d}.txt"
     latest_path = output_dir / f"{show_name} - Latest.txt"
+    playlisty_dir = output_dir / "Playlisty"
+    playlisty_latest_path = playlisty_dir / f"{show_name} - Latest.txt"
 
+    playlisty_dir.mkdir(exist_ok=True)
     dated_path.write_text(content, encoding="utf-8")
     latest_path.write_text(content, encoding="utf-8")
+    playlisty_latest_path.write_text(content, encoding="utf-8")
 
-    return dated_path, latest_path
+    return dated_path, latest_path, playlisty_latest_path
 
 
 def scheduled_slot_date(now):
@@ -146,7 +150,12 @@ def run_playlists(script_dir):
     for show in SHOWS:
         try:
             tracks = fetch_tracks(show)
-            dated_path, latest_path = save_playlist(show, tracks, playlist_date, script_dir)
+            dated_path, latest_path, playlisty_latest_path = save_playlist(
+                show,
+                tracks,
+                playlist_date,
+                script_dir,
+            )
         except Exception as exc:
             failures.append((show["name"], exc))
             print(f"{show['name']}: failed: {exc}")
@@ -155,6 +164,7 @@ def run_playlists(script_dir):
         print(f"{show['name']}: found {len(tracks)} tracks.")
         print(f"Dated playlist: {dated_path}")
         print(f"Latest playlist: {latest_path}")
+        print(f"Playlisty latest: {playlisty_latest_path}")
 
     if failures:
         sys.exit(1)
