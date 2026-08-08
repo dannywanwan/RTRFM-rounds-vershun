@@ -20,6 +20,8 @@ SHOW_SLUG = "therounds"
 RESTREAM_ENDPOINT = "https://restreams.rtrfm.com.au/rzz"
 LOCAL_DIR = Path("/media/rtrfm") / SHOW_NAME
 ARCHIVE_DIR = Path("/share/qnap_rtrfm") / SHOW_NAME
+LATEST_FILE = LOCAL_DIR / f"{SHOW_NAME} - Latest.mp4"
+LATEST_DATE_FILE = Path("/config/latest-date")
 TIMEZONE = ZoneInfo("Australia/Perth")
 REQUEST_TIMEOUT = (20, 60)
 
@@ -61,16 +63,10 @@ def extension_for(url: str) -> str:
     return extension if extension in {".mp3", ".mp4", ".m4a"} else ".mp3"
 
 
-def download(session: requests.Session, episode_date: dt.date, url: str, folder: Path) -> Path | None:
-    folder.mkdir(parents=True, exist_ok=True)
-    destination = folder / f"{SHOW_NAME} - {episode_date.isoformat()}{extension_for(url)}"
-    existing = matching_file(folder, episode_date)
-    if existing:
-        log.info("Already present: %s", existing)
-        return existing
-
+def download_to(session: requests.Session, episode_date: dt.date, url: str, destination: Path) -> Path | None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
     partial = destination.with_suffix(destination.suffix + ".part")
-    log.info("Downloading %s to %s", episode_date, folder)
+    log.info("Downloading %s to %s", episode_date, destination)
     try:
         with session.get(url, stream=True, timeout=REQUEST_TIMEOUT) as response:
             if response.status_code == 404:
@@ -87,6 +83,36 @@ def download(session: requests.Session, episode_date: dt.date, url: str, folder:
     finally:
         if partial.exists() and not destination.exists():
             partial.unlink()
+
+
+def download_dated(session: requests.Session, episode_date: dt.date, url: str, folder: Path) -> Path | None:
+    folder.mkdir(parents=True, exist_ok=True)
+    destination = folder / f"{SHOW_NAME} - {episode_date.isoformat()}{extension_for(url)}"
+    existing = matching_file(folder, episode_date)
+    if existing:
+        log.info("Already present: %s", existing)
+        return existing
+    return download_to(session, episode_date, url, destination)
+
+
+def latest_date_on_disk() -> dt.date | None:
+    try:
+        return dt.date.fromisoformat(LATEST_DATE_FILE.read_text().strip())
+    except (OSError, ValueError):
+        return None
+
+
+def save_latest(session: requests.Session, episode_date: dt.date, url: str) -> Path | None:
+    if LATEST_FILE.exists() and latest_date_on_disk() == episode_date:
+        log.info("Latest file is current: %s", LATEST_FILE)
+        return LATEST_FILE
+
+    downloaded = download_to(session, episode_date, url, LATEST_FILE)
+    if downloaded is None:
+        return None
+    LATEST_DATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    LATEST_DATE_FILE.write_text(episode_date.isoformat() + "\n")
+    return downloaded
 
 
 def archive_file(source: Path) -> bool:
@@ -126,7 +152,14 @@ def run_once(session: requests.Session, lookback_days: int) -> None:
         return
 
     latest_date = max(episodes)
-    latest = download(session, latest_date, episodes[latest_date], LOCAL_DIR)
+    legacy_latest = matching_file(LOCAL_DIR, latest_date)
+    if legacy_latest:
+        if not matching_file(ARCHIVE_DIR, latest_date):
+            archive_file(legacy_latest)
+        elif legacy_latest.exists():
+            legacy_latest.unlink()
+
+    latest = save_latest(session, latest_date, episodes[latest_date])
     if latest is None:
         log.warning("Latest episode %s could not be downloaded; leaving existing files untouched.", latest_date)
         return
@@ -142,7 +175,7 @@ def run_once(session: requests.Session, lookback_days: int) -> None:
         if archived:
             continue
         if local is None:
-            local = download(session, episode_date, url, LOCAL_DIR)
+            local = download_dated(session, episode_date, url, LOCAL_DIR)
         if local:
             archive_file(local)
 
