@@ -1,0 +1,29 @@
+name: RTRFM Audio Archive
+version: 1.0.0
+slug: rtrfm_audio_archive
+description: Downloads The Rounds from RTRFM and archives older episodes to QNAP.
+url: https://github.com/dannywanwan/RTRFM-rounds-vershun
+startup: services
+boot: auto
+init: false
+arch:
+  - aarch64
+  - armv7
+  - armhf
+  - amd64
+map:
+  - type: media
+    read_only: false
+    path: /media
+  - type: share
+    read_only: false
+    path: /share
+  - type: addon_config
+    read_only: false
+    path: /config
+options:
+  interval_hours: 24
+  lookback_days: 35
+schema:
+  interval_hours: int
+  lookback_days: int
