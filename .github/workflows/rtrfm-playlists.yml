@@ -19,6 +19,9 @@ concurrency:
   group: rtrfm-playlists
   cancel-in-progress: false
 
+env:
+  TZ: Australia/Perth
+
 jobs:
   fetch:
     name: Fetch RTRFM playlists
