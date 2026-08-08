@@ -7,6 +7,22 @@ This project fetches RTRFM tracklists for:
 
 It writes Playlisty-friendly text files and keeps the full dated archive in this repository.
 
+## The Rounds audio proof of concept
+
+`download_rtrfm_audio.py` checks recent Saturday episodes of The Rounds and downloads any available MP3 recordings. It keeps dated files permanently in:
+
+```text
+~/RTRFM Audio/The Rounds/
+```
+
+To run it by double-clicking, open:
+
+```text
+Download The Rounds Audio.command
+```
+
+The proof of concept checks the last 35 days, skips files already downloaded, and writes incomplete downloads as temporary files until they finish.
+
 ## Where the files go
 
 The repository root keeps every generated dated export forever:
