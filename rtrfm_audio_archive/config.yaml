@@ -1,5 +1,5 @@
 name: RTRFM Audio Archive
-version: 1.2.0
+version: 1.2.1
 slug: rtrfm_audio_archive
 description: Downloads The Rounds from RTRFM and archives older episodes to QNAP.
 url: https://github.com/dannywanwan/RTRFM-rounds-vershun
