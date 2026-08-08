@@ -69,13 +69,26 @@ class RtrfmEpisodeCard extends HTMLElement {
     }
   }
 
-  _play(episode) {
+  async _play(episode) {
     if (!this._hass) return;
-    this._hass.callService("media_player", "play_media", {
-      entity_id: this._config.entity,
-      media_content_id: episode.media_content_id,
-      media_content_type: episode.media_content_type || "music",
-    });
+    try {
+      const resolved = await this._hass.callWS({
+        type: "media_source/resolve_media",
+        media_content_id: episode.media_content_id,
+        expires: 3600,
+      });
+      const mediaUrl = resolved.url?.startsWith("/")
+        ? `${window.location.origin}${resolved.url}`
+        : resolved.url;
+      await this._hass.callService("media_player", "play_media", {
+        entity_id: this._config.entity,
+        media_content_id: mediaUrl || episode.media_content_id,
+        media_content_type: resolved.mime_type || episode.media_content_type || "audio/mpeg",
+      });
+    } catch (error) {
+      this._error = error?.message || "Could not play episode";
+      this._render();
+    }
   }
 
   _render() {
