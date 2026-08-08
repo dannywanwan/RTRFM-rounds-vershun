@@ -20,7 +20,7 @@ SHOW_SLUG = "therounds"
 RESTREAM_ENDPOINT = "https://restreams.rtrfm.com.au/rzz"
 LOCAL_DIR = Path("/media/rtrfm") / SHOW_NAME
 ARCHIVE_DIR = Path("/share/qnap_rtrfm") / SHOW_NAME
-LATEST_FILE = LOCAL_DIR / f"{SHOW_NAME} - Latest.mp4"
+LATEST_FILE = LOCAL_DIR / f"{SHOW_NAME} - Latest.mp3"
 LATEST_DATE_FILE = Path("/config/latest-date")
 TIMEZONE = ZoneInfo("Australia/Perth")
 REQUEST_TIMEOUT = (20, 60)
@@ -112,6 +112,10 @@ def save_latest(session: requests.Session, episode_date: dt.date, url: str) -> P
         return None
     LATEST_DATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     LATEST_DATE_FILE.write_text(episode_date.isoformat() + "\n")
+    for legacy in LOCAL_DIR.glob(f"{SHOW_NAME} - Latest.*"):
+        if legacy != LATEST_FILE and legacy.is_file():
+            legacy.unlink()
+            log.info("Removed obsolete latest file: %s", legacy)
     return downloaded
 
 
