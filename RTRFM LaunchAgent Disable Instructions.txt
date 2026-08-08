@@ -1,0 +1,17 @@
+RTRFM LaunchAgent disable / uninstall instructions
+
+To disable the weekly scheduled run:
+
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.daniel.rtrfm.plist
+
+To confirm it is no longer loaded:
+
+launchctl print gui/$(id -u)/com.daniel.rtrfm
+
+If it is unloaded, launchctl should report that it cannot find the service.
+
+To fully remove the LaunchAgent plist after disabling it:
+
+rm ~/Library/LaunchAgents/com.daniel.rtrfm.plist
+
+This does not delete the project, the script, playlists, or log files.
