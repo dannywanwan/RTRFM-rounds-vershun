@@ -25,7 +25,7 @@ The proof of concept checks the last 35 days, skips files already downloaded, an
 
 ## Home Assistant audio archive app
 
-The `rtrfm_audio_archive/` folder is a Home Assistant app repository entry. Add this GitHub repository to the Home Assistant app store, install **RTRFM Audio Archive**, and start it. It keeps the newest The Rounds episode at the stable path `/media/rtrfm/The Rounds/The Rounds - Latest.mp3` and moves older episodes to dated files in `/share/qnap_rtrfm/The Rounds/`.
+The `rtrfm_audio_archive/` folder is a Home Assistant app repository entry. Add this GitHub repository to the Home Assistant app store, install **RTRFM Audio Archive**, and start it. It keeps the newest The Rounds episode at the stable path `/media/rtrfm/The Rounds/The Rounds - Latest.mp3` and moves older episodes to dated files in `/media/qnap_rtrfm/The Rounds/`.
 
 ## Where the files go
 

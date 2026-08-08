@@ -19,7 +19,7 @@ SHOW_NAME = "The Rounds"
 SHOW_SLUG = "therounds"
 RESTREAM_ENDPOINT = "https://restreams.rtrfm.com.au/rzz"
 LOCAL_DIR = Path("/media/rtrfm") / SHOW_NAME
-ARCHIVE_DIR = Path("/share/qnap_rtrfm") / SHOW_NAME
+ARCHIVE_DIR = Path("/media/qnap_rtrfm") / SHOW_NAME
 LATEST_FILE = LOCAL_DIR / f"{SHOW_NAME} - Latest.mp3"
 LATEST_DATE_FILE = Path("/config/latest-date")
 TIMEZONE = ZoneInfo("Australia/Perth")
@@ -120,7 +120,7 @@ def save_latest(session: requests.Session, episode_date: dt.date, url: str) -> P
 
 
 def archive_file(source: Path) -> bool:
-    archive_root = Path("/share/qnap_rtrfm")
+    archive_root = Path("/media/qnap_rtrfm")
     if not archive_root.is_dir():
         log.error("QNAP archive is not mounted at %s; keeping %s locally.", archive_root, source)
         return False
