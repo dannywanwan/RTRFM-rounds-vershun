@@ -54,6 +54,28 @@ That command downloads the latest Playlisty text files from GitHub into this loc
 
 It does not update code or workflow files.
 
+## Download automatically once per month
+
+Double-click this once:
+
+```text
+Install Monthly Playlisty Download.command
+```
+
+That installs a Mac LaunchAgent for the current user. It checks every 6 hours while the Mac is awake, including after login, and downloads the latest Playlisty files only once per calendar month.
+
+The monthly runner keeps its stamp and log here:
+
+```text
+~/Library/Application Support/RTRFM Playlisty/
+```
+
+To remove the monthly automation, double-click:
+
+```text
+Uninstall Monthly Playlisty Download.command
+```
+
 ## Run locally
 
 Install dependencies:
