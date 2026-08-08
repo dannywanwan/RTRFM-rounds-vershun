@@ -8,6 +8,7 @@ import datetime as dt
 import sys
 from pathlib import Path
 from urllib.parse import urlencode
+from urllib.parse import urlparse
 
 import requests
 
@@ -51,16 +52,23 @@ def download_episode(
     output_dir: Path,
     dry_run: bool,
 ) -> Path:
-    filename = f"{SHOW_NAME} - {episode_date.isoformat()}.mp3"
-    destination = output_dir / filename
-    if destination.exists() and destination.stat().st_size > 0:
-        print(f"Already downloaded: {destination}")
-        return destination
-
     url = stream_url(session, episode_date)
     if url is None:
-        print(f"Not available: {episode_date}")
-        return destination
+        print(f"Not listed: {episode_date}")
+        return output_dir / f"{SHOW_NAME} - {episode_date.isoformat()}.mp3"
+
+    extension = Path(urlparse(url).path).suffix.lower()
+    if extension not in {".mp3", ".mp4", ".m4a"}:
+        extension = ".mp3"
+    destination = output_dir / f"{SHOW_NAME} - {episode_date.isoformat()}{extension}"
+    existing_files = [
+        output_dir / f"{SHOW_NAME} - {episode_date.isoformat()}{suffix}"
+        for suffix in (".mp3", ".mp4", ".m4a")
+    ]
+    for existing in existing_files:
+        if existing.exists() and existing.stat().st_size > 0:
+            print(f"Already downloaded: {existing}")
+            return existing
 
     if dry_run:
         print(f"Available: {episode_date} -> {destination}")
@@ -70,6 +78,9 @@ def download_episode(
     partial = destination.with_suffix(destination.suffix + ".part")
     print(f"Downloading {episode_date}...", flush=True)
     with session.get(url, stream=True, timeout=REQUEST_TIMEOUT) as response:
+        if response.status_code == 404:
+            print(f"Expired or unavailable: {episode_date}")
+            return destination
         response.raise_for_status()
         with partial.open("wb") as file:
             for chunk in response.iter_content(chunk_size=1024 * 1024):
