@@ -14,10 +14,7 @@ class RtrfmEpisodeCard extends HTMLElement {
     this._config = {
       title: "The Rounds",
       entity: config.entity,
-      roots: [
-        "media-source://media_source/local/rtrfm/The Rounds",
-        "media-source://media_source/local/qnap_rtrfm/The Rounds",
-      ],
+      roots: ["media-source://media_source/local"],
       ...config,
     };
     this._render();
@@ -42,12 +39,23 @@ class RtrfmEpisodeCard extends HTMLElement {
     this._error = "";
     this._render();
     try {
-      const results = await Promise.all(
-        this._config.roots.map((media_content_id) =>
-          this._hass.callWS({ type: "media_source/browse_media", media_content_id })
-        )
-      );
-      const items = results.flatMap((result) => result.children || []);
+      const items = [];
+      const visit = async (media_content_id, depth) => {
+        const result = await this._hass.callWS({
+          type: "media_source/browse_media",
+          media_content_id,
+        });
+        for (const item of result.children || []) {
+          const name = String(item.title || item.media_content_id || "");
+          if (/\.(mp3|m4a|mp4|aac|wav|ogg|flac)$/i.test(name)) {
+            const location = `${name} ${item.media_content_id}`.toLowerCase();
+            if (/the rounds|therounds|qnap_rtrfm|rtrfm/.test(location)) items.push(item);
+          } else if (depth < 4 && item.can_expand && item.media_content_id) {
+            await visit(item.media_content_id, depth + 1);
+          }
+        }
+      };
+      await Promise.all(this._config.roots.map((root) => visit(root, 0)));
       const audio = items.filter((item) => {
         const name = String(item.title || item.media_content_id || "").toLowerCase();
         return /\.(mp3|m4a|mp4|aac|wav|ogg|flac)$/.test(name);

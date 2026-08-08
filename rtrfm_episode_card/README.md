@@ -35,6 +35,5 @@ type: custom:rtrfm-episode-card
 title: RTRFM The Rounds
 entity: media_player.dining_room_2
 roots:
-  - media-source://media_source/local/rtrfm/The Rounds
-  - media-source://media_source/local/qnap_rtrfm/The Rounds
+  - media-source://media_source/local
 ```
