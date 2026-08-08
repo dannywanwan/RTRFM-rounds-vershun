@@ -1,5 +1,8 @@
 RTRFM LaunchAgent disable / uninstall instructions
 
+The scheduled job runs at login and checks every 15 minutes while the Mac is awake.
+The script only fetches once for each weekly Sunday 10.00am slot.
+
 To disable the weekly scheduled run:
 
 launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.daniel.rtrfm.plist

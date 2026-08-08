@@ -1,6 +1,8 @@
+import argparse
+import json
 import re
 import sys
-from datetime import date
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 import requests
@@ -23,6 +25,9 @@ STOP_LINES = {
     "Loading...",
 }
 TIMESTAMP_RE = re.compile(r"(?:\d{1,2}:\d{2}|--:--)")  # RTRFM timestamps
+STATE_FILE = ".rtrfm_state.json"
+SCHEDULE_WEEKDAY = 6  # Python weekday: Monday is 0, Sunday is 6.
+SCHEDULE_TIME = time(hour=10)
 
 
 def fetch_tracks(show):
@@ -96,8 +101,45 @@ def save_playlist(show, tracks, playlist_date, output_dir):
     return dated_path, latest_path
 
 
-def main():
-    script_dir = Path(__file__).resolve().parent
+def scheduled_slot_date(now):
+    scheduled_date = now.date() - timedelta(
+        days=(now.weekday() - SCHEDULE_WEEKDAY) % 7
+    )
+    scheduled_at = datetime.combine(scheduled_date, SCHEDULE_TIME, tzinfo=now.tzinfo)
+
+    if now < scheduled_at:
+        scheduled_date -= timedelta(days=7)
+
+    return scheduled_date
+
+
+def should_run_scheduled(output_dir, now):
+    slot_date = scheduled_slot_date(now)
+    state_path = output_dir / STATE_FILE
+
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        state = {}
+    except json.JSONDecodeError:
+        state = {}
+
+    last_slot = state.get("last_successful_scheduled_slot")
+    if last_slot == slot_date.isoformat():
+        return False, slot_date, state_path
+
+    return True, slot_date, state_path
+
+
+def record_scheduled_run(state_path, slot_date):
+    state = {
+        "last_successful_scheduled_slot": slot_date.isoformat(),
+        "last_successful_run": datetime.now().astimezone().isoformat(timespec="seconds"),
+    }
+    state_path.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
+
+
+def run_playlists(script_dir):
     playlist_date = date.today()
     failures = []
 
@@ -116,6 +158,34 @@ def main():
 
     if failures:
         sys.exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Fetch RTRFM show tracklists.")
+    parser.add_argument(
+        "--scheduled",
+        action="store_true",
+        help="Only fetch once per Sunday 10am weekly slot.",
+    )
+    args = parser.parse_args()
+
+    script_dir = Path(__file__).resolve().parent
+
+    if args.scheduled:
+        should_run, slot_date, state_path = should_run_scheduled(
+            script_dir,
+            datetime.now().astimezone(),
+        )
+        if not should_run:
+            print(f"Already fetched RTRFM playlists for weekly slot {slot_date}.")
+            return
+
+        run_playlists(script_dir)
+        record_scheduled_run(state_path, slot_date)
+        print(f"Recorded scheduled run for weekly slot {slot_date}.")
+        return
+
+    run_playlists(script_dir)
 
 
 if __name__ == "__main__":
