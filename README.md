@@ -64,6 +64,12 @@ Install Monthly Playlisty Download.command
 
 That installs a Mac LaunchAgent for the current user. It checks every 6 hours while the Mac is awake, including after login, and downloads the latest Playlisty files only once per calendar month.
 
+Monthly automatic downloads are saved here:
+
+```text
+~/RTRFM Playlisty/
+```
+
 The monthly runner keeps its stamp and log here:
 
 ```text

@@ -7,6 +7,8 @@ SUPPORT_DIR="$HOME/Library/Application Support/RTRFM Playlisty"
 INSTALLED_RUNNER="$SUPPORT_DIR/run-monthly-playlisty-download.zsh"
 PLIST="$HOME/Library/LaunchAgents/com.dannywanwan.rtrfm-playlisty-monthly.plist"
 LOG_DIR="$HOME/Library/Logs"
+REMOTE_URL="$(git -C "$REPO_DIR" remote get-url origin)"
+DOWNLOAD_DIR="$HOME/RTRFM Playlisty"
 
 if [ ! -x "$RUNNER" ]; then
   chmod +x "$RUNNER"
@@ -17,10 +19,12 @@ mkdir -p "$HOME/Library/LaunchAgents" "$LOG_DIR" "$SUPPORT_DIR"
 {
   print -r '#!/bin/zsh'
   print -r 'set -euo pipefail'
-  printf 'REPO_DIR=%q\n' "$REPO_DIR"
+  printf 'REMOTE_URL=%q\n' "$REMOTE_URL"
+  printf 'DOWNLOAD_DIR=%q\n' "$DOWNLOAD_DIR"
   print -r 'STAMP_DIR="$HOME/Library/Application Support/RTRFM Playlisty"'
   print -r 'STAMP_FILE="$STAMP_DIR/monthly-download-stamp"'
   print -r 'LOG_FILE="$STAMP_DIR/monthly-download.log"'
+  print -r 'CACHE_REPO="$STAMP_DIR/repo-cache"'
   print -r 'THIS_MONTH="$(date +%Y-%m)"'
   print -r ''
   print -r 'mkdir -p "$STAMP_DIR"'
@@ -37,18 +41,25 @@ mkdir -p "$HOME/Library/LaunchAgents" "$LOG_DIR" "$SUPPORT_DIR"
   print -r '  exit 1'
   print -r 'fi'
   print -r ''
-  print -r 'git -C "$REPO_DIR" fetch origin main >> "$LOG_FILE" 2>&1'
+  print -r 'if [ -d "$CACHE_REPO/.git" ]; then'
+  print -r '  git -C "$CACHE_REPO" fetch origin main >> "$LOG_FILE" 2>&1'
+  print -r 'else'
+  print -r '  git clone --filter=blob:none --no-checkout "$REMOTE_URL" "$CACHE_REPO" >> "$LOG_FILE" 2>&1'
+  print -r '  git -C "$CACHE_REPO" fetch origin main >> "$LOG_FILE" 2>&1'
+  print -r 'fi'
   print -r ''
-  print -r 'playlist_files="$(git -C "$REPO_DIR" ls-tree -r --name-only origin/main | awk '"'"'/^((The Rounds|Jamdown Vershun) - .*\.txt|Playlisty\/.*\.txt)$/ { print }'"'"')"'
+  print -r 'playlist_files="$(git -C "$CACHE_REPO" ls-tree -r --name-only origin/main | awk '"'"'/^((The Rounds|Jamdown Vershun) - .*\.txt|Playlisty\/.*\.txt)$/ { print }'"'"')"'
   print -r ''
   print -r 'if [ -z "$playlist_files" ]; then'
   print -r '  echo "$(date): No Playlisty text files were found on GitHub." >> "$LOG_FILE"'
   print -r '  exit 1'
   print -r 'fi'
   print -r ''
+  print -r 'mkdir -p "$DOWNLOAD_DIR"'
+  print -r ''
   print -r 'echo "$playlist_files" | while IFS= read -r file; do'
-  print -r '  mkdir -p "$REPO_DIR/$(dirname "$file")"'
-  print -r '  git -C "$REPO_DIR" show "origin/main:$file" > "$REPO_DIR/$file"'
+  print -r '  mkdir -p "$DOWNLOAD_DIR/$(dirname "$file")"'
+  print -r '  git -C "$CACHE_REPO" show "origin/main:$file" > "$DOWNLOAD_DIR/$file"'
   print -r '  echo "$(date): Updated $file" >> "$LOG_FILE"'
   print -r 'done'
   print -r ''
@@ -76,5 +87,6 @@ launchctl kickstart -k "gui/$UID/com.dannywanwan.rtrfm-playlisty-monthly"
 echo
 echo "Monthly Playlisty download is installed."
 echo "It checks every 6 hours while the Mac is awake and only downloads once per month."
+echo "Files will download to: $DOWNLOAD_DIR"
 echo
 echo "You can close this window."
