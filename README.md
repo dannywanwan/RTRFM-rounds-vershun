@@ -27,6 +27,8 @@ The proof of concept checks the last 35 days, skips files already downloaded, an
 
 The `rtrfm_audio_archive/` folder is a Home Assistant app repository entry. Add this GitHub repository to the Home Assistant app store, install **RTRFM Audio Archive**, and start it. It keeps the newest The Rounds episode at the stable path `/media/rtrfm/The Rounds/The Rounds - Latest.mp3` and moves older episodes to dated files in `/media/qnap_rtrfm/The Rounds/`.
 
+The optional `rtrfm_episode_card/` folder contains a Lovelace card that lists all downloaded episodes and plays one on Sonos with one click. See its README for installation and dashboard YAML.
+
 ## Where the files go
 
 The repository root keeps every generated dated export forever:
