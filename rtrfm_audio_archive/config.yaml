@@ -1,7 +1,7 @@
 name: RTRFM Audio Archive
-version: 1.3.0
+version: 1.4.0
 slug: rtrfm_audio_archive
-description: Downloads The Rounds from RTRFM and archives older episodes to QNAP.
+description: Downloads and keeps The Rounds episodes in Home Assistant media storage.
 url: https://github.com/dannywanwan/RTRFM-rounds-vershun
 startup: services
 boot: auto

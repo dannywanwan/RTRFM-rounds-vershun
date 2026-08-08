@@ -1,8 +1,8 @@
 # RTRFM Episodes dashboard card
 
-This custom Lovelace card lists audio files from the two Home Assistant Media
-Source folders used by the RTRFM Audio Archive app and plays a selected file
-on Sonos.
+This custom Lovelace card lists audio files from the local Home Assistant Media
+Source folder used by the RTRFM Audio Archive app and plays a selected file on
+Sonos.
 
 ## Install
 
@@ -22,8 +22,6 @@ type: custom:rtrfm-episode-card
 entity: media_player.dining_room_2
 ```
 
-The QNAP network storage must have usage set to **Media**, with the name
-`qnap_rtrfm`, so `/media/qnap_rtrfm/The Rounds/` is visible to Media Source.
 After adding a new file, use the refresh button in the card.
 
 ## Optional configuration

@@ -49,7 +49,7 @@ class RtrfmEpisodeCard extends HTMLElement {
           const name = String(item.title || item.media_content_id || "");
           if (/\.(mp3|m4a|mp4|aac|wav|ogg|flac)$/i.test(name)) {
             const location = `${name} ${item.media_content_id}`.toLowerCase();
-            if (/the rounds|therounds|qnap_rtrfm|rtrfm/.test(location)) items.push(item);
+            if (/the rounds|therounds|rtrfm/.test(location) && !/qnap_rtrfm/.test(location)) items.push(item);
           } else if (depth < 4 && item.can_expand && item.media_content_id) {
             await visit(item.media_content_id, depth + 1);
           }

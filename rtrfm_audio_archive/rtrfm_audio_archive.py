@@ -6,7 +6,6 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
-import shutil
 import time
 from pathlib import Path
 from urllib.parse import urlencode, urlparse
@@ -19,7 +18,6 @@ SHOW_NAME = "The Rounds"
 SHOW_SLUG = "therounds"
 RESTREAM_ENDPOINT = "https://restreams.rtrfm.com.au/rzz"
 LOCAL_DIR = Path("/media/rtrfm") / SHOW_NAME
-ARCHIVE_DIR = Path("/media/qnap_rtrfm") / SHOW_NAME
 LATEST_FILE = LOCAL_DIR / f"{SHOW_NAME} - Latest.mp3"
 LATEST_DATE_FILE = Path("/config/latest-date")
 TIMEZONE = ZoneInfo("Australia/Perth")
@@ -119,35 +117,6 @@ def save_latest(session: requests.Session, episode_date: dt.date, url: str) -> P
     return downloaded
 
 
-def archive_file(source: Path) -> bool:
-    archive_root = Path("/media/qnap_rtrfm")
-    if not archive_root.is_dir():
-        log.error("QNAP archive is not mounted at %s; keeping %s locally.", archive_root, source)
-        return False
-    ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
-    destination = ARCHIVE_DIR / source.name
-    existing = matching_file(ARCHIVE_DIR, dt.date.fromisoformat(source.stem.rsplit(" - ", 1)[-1]))
-    if existing:
-        source.unlink()
-        log.info("Removed duplicate local copy: %s", source)
-        return True
-
-    partial = destination.with_suffix(destination.suffix + ".part")
-    try:
-        shutil.copy2(source, partial)
-        if partial.stat().st_size != source.stat().st_size:
-            raise IOError(f"Archive size check failed for {source}")
-        partial.replace(destination)
-        source.unlink()
-        log.info("Archived: %s", destination)
-        return True
-    except (OSError, shutil.Error) as exc:
-        log.error("Could not archive %s: %s", source, exc)
-        if partial.exists():
-            partial.unlink()
-        return False
-
-
 def run_once(session: requests.Session, lookback_days: int) -> None:
     today = dt.datetime.now(TIMEZONE).date()
     episodes = available_dates(session, today, lookback_days)
@@ -156,13 +125,6 @@ def run_once(session: requests.Session, lookback_days: int) -> None:
         return
 
     latest_date = max(episodes)
-    legacy_latest = matching_file(LOCAL_DIR, latest_date)
-    if legacy_latest:
-        if not matching_file(ARCHIVE_DIR, latest_date):
-            archive_file(legacy_latest)
-        elif legacy_latest.exists():
-            legacy_latest.unlink()
-
     latest = save_latest(session, latest_date, episodes[latest_date])
     if latest is None:
         log.warning("Latest episode %s could not be downloaded; leaving existing files untouched.", latest_date)
@@ -171,17 +133,9 @@ def run_once(session: requests.Session, lookback_days: int) -> None:
     for episode_date, url in sorted(episodes.items()):
         if episode_date == latest_date:
             continue
-        archived = matching_file(ARCHIVE_DIR, episode_date)
         local = matching_file(LOCAL_DIR, episode_date)
-        if archived and local:
-            local.unlink()
-            continue
-        if archived:
-            continue
         if local is None:
-            local = download_dated(session, episode_date, url, LOCAL_DIR)
-        if local:
-            archive_file(local)
+            download_dated(session, episode_date, url, LOCAL_DIR)
 
     log.info("Current local episode: %s", latest)
 
