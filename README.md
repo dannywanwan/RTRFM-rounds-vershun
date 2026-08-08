@@ -70,6 +70,12 @@ The monthly runner keeps its stamp and log here:
 ~/Library/Application Support/RTRFM Playlisty/
 ```
 
+The LaunchAgent itself is installed here:
+
+```text
+~/Library/LaunchAgents/com.dannywanwan.rtrfm-playlisty-monthly.plist
+```
+
 To remove the monthly automation, double-click:
 
 ```text
