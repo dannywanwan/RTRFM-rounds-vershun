@@ -5,6 +5,7 @@ export default class RtrfmEpisodeCard extends HTMLElement {
     this._episodes = [];
     this._loading = false;
     this._error = "";
+    this._storage = null;
   }
 
   setConfig(config) {
@@ -61,6 +62,12 @@ export default class RtrfmEpisodeCard extends HTMLElement {
         }
       };
       await Promise.all(this._config.roots.map((root) => visit(root, 0)));
+      try {
+        const response = await fetch(`/local/rtrfm-storage-summary.json?cache=${Date.now()}`);
+        if (response.ok) this._storage = await response.json();
+      } catch {
+        this._storage = null;
+      }
       const audio = items.filter((item) => {
         const name = String(item.title || item.media_content_id || "").toLowerCase();
         return /\.(mp3|m4a|mp4|aac|wav|ogg|flac)$/.test(name);
@@ -129,6 +136,7 @@ export default class RtrfmEpisodeCard extends HTMLElement {
         .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .message { color: var(--secondary-text-color); padding: 12px 16px 18px; }
         .error { color: var(--error-color); padding: 0 16px 14px; }
+        .storage { color: var(--secondary-text-color); font-size: .85rem; padding: 0 16px 14px; }
       </style>
       <ha-card>
         <div class="header">
@@ -136,6 +144,7 @@ export default class RtrfmEpisodeCard extends HTMLElement {
           <button class="refresh" title="Refresh episodes" aria-label="Refresh episodes">↻</button>
         </div>
         <div class="list">${rows}</div>
+        ${this._storage ? `<div class="storage">Local RTRFM storage: ${this._formatBytes(this._storage.bytes)} across ${this._storage.files} files</div>` : ""}
         ${this._error ? `<div class="error">${this._escape(this._error)}</div>` : ""}
       </ha-card>`;
 
@@ -155,5 +164,12 @@ export default class RtrfmEpisodeCard extends HTMLElement {
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
+  }
+
+  _formatBytes(value) {
+    const bytes = Number(value) || 0;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
   }
 }

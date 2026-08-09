@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.17.0
+
+- Calculates total local storage used by all downloaded RTRFM audio.
+- Shows the local storage total and file count at the bottom of each episode card.
+- Excludes temporary partial downloads and QNAP storage.
+
 ## 1.16.0
 
 - Added Saturday replay downloads for Trainwreck using RTRFM slug `trainwreck`.

@@ -21,6 +21,7 @@ CARD_SOURCE = Path("/rtrfm-episode-card.js")
 CARD_DESTINATION = Path("/homeassistant/www/rtrfm-episode-card.js")
 CARD_IMPL_SOURCE = Path("/rtrfm-episode-card-impl.js")
 CARD_IMPL_DESTINATION = Path("/homeassistant/www/rtrfm-episode-card-impl.js")
+STORAGE_SUMMARY_DESTINATION = Path("/homeassistant/www/rtrfm-storage-summary.json")
 TIMEZONE = ZoneInfo("Australia/Perth")
 REQUEST_TIMEOUT = (20, 60)
 
@@ -70,6 +71,32 @@ def install_dashboard_card() -> None:
                 log.info("Installed dashboard card file at %s", destination)
     except OSError as exc:
         log.error("Could not install dashboard card: %s", exc)
+
+
+def update_storage_summary() -> None:
+    total_bytes = 0
+    file_count = 0
+    try:
+        if LOCAL_ROOT.exists():
+            for path in LOCAL_ROOT.rglob("*"):
+                if path.is_file() and not path.name.endswith(".part"):
+                    try:
+                        total_bytes += path.stat().st_size
+                        file_count += 1
+                    except OSError:
+                        continue
+        payload = {
+            "bytes": total_bytes,
+            "files": file_count,
+            "updated_at": dt.datetime.now(TIMEZONE).isoformat(),
+        }
+        STORAGE_SUMMARY_DESTINATION.parent.mkdir(parents=True, exist_ok=True)
+        temporary = STORAGE_SUMMARY_DESTINATION.with_suffix(".json.part")
+        temporary.write_text(json.dumps(payload) + "\n")
+        temporary.replace(STORAGE_SUMMARY_DESTINATION)
+        log.info("Local RTRFM storage: %.2f MB across %s files.", total_bytes / 1024 / 1024, file_count)
+    except OSError as exc:
+        log.warning("Could not update storage summary: %s", exc)
 
 
 def available_dates(
@@ -223,6 +250,7 @@ def main() -> None:
         run_once(session, lookback_days)
     except Exception:
         log.exception("The startup check failed; continuing with the weekly schedule.")
+    update_storage_summary()
 
     while True:
         wait_seconds = seconds_until_sunday(sunday_hour)
@@ -233,6 +261,7 @@ def main() -> None:
             run_once(session, lookback_days)
         except Exception:
             log.exception("The archive check failed; it will retry later.")
+        update_storage_summary()
 
 
 if __name__ == "__main__":
