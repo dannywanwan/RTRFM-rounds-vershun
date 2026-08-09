@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep the newest The Rounds episode local and archive older episodes to QNAP."""
+"""Keep The Rounds episodes and the dashboard card in local Home Assistant storage."""
 
 from __future__ import annotations
 
@@ -20,11 +20,28 @@ RESTREAM_ENDPOINT = "https://restreams.rtrfm.com.au/rzz"
 LOCAL_DIR = Path("/media/rtrfm") / SHOW_NAME
 LATEST_FILE = LOCAL_DIR / f"{SHOW_NAME} - Latest.mp3"
 LATEST_DATE_FILE = Path("/config/latest-date")
+CARD_SOURCE = Path("/rtrfm-episode-card.js")
+CARD_DESTINATION = Path("/homeassistant/www/rtrfm-episode-card.js")
 TIMEZONE = ZoneInfo("Australia/Perth")
 REQUEST_TIMEOUT = (20, 60)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("rtrfm-audio-archive")
+
+
+def install_dashboard_card() -> None:
+    if not CARD_SOURCE.exists():
+        log.warning("Dashboard card source is missing from the app image.")
+        return
+    try:
+        CARD_DESTINATION.parent.mkdir(parents=True, exist_ok=True)
+        if not CARD_DESTINATION.exists() or CARD_DESTINATION.read_bytes() != CARD_SOURCE.read_bytes():
+            temporary = CARD_DESTINATION.with_suffix(".js.part")
+            temporary.write_bytes(CARD_SOURCE.read_bytes())
+            temporary.replace(CARD_DESTINATION)
+            log.info("Installed dashboard card at %s", CARD_DESTINATION)
+    except OSError as exc:
+        log.error("Could not install dashboard card: %s", exc)
 
 
 def available_dates(session: requests.Session, today: dt.date, lookback_days: int) -> dict[dt.date, str]:
@@ -141,6 +158,7 @@ def run_once(session: requests.Session, lookback_days: int) -> None:
 
 
 def main() -> None:
+    install_dashboard_card()
     options_path = Path("/data/options.json")
     options = json.loads(options_path.read_text()) if options_path.exists() else {}
     interval_hours = max(1, int(options.get("interval_hours", 24)))
