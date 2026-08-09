@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.14.0
+
+- Runs one check when the app starts, then continues with the weekly Sunday schedule.
+- Restarting the app now provides an on-demand refresh without changing its schedule.
+
 ## 1.13.0
 
 - Added Saturday replay downloads for Jamdown Vershun using RTRFM slug `jamdown`.

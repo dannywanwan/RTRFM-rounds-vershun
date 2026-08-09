@@ -217,6 +217,12 @@ def main() -> None:
     session = requests.Session()
     session.headers.update({"User-Agent": "RTRFM-The-Rounds-Home-Assistant/1.0"})
 
+    log.info("Running startup check for all shows.")
+    try:
+        run_once(session, lookback_days)
+    except Exception:
+        log.exception("The startup check failed; continuing with the weekly schedule.")
+
     while True:
         wait_seconds = seconds_until_sunday(sunday_hour)
         next_run = dt.datetime.now(TIMEZONE) + dt.timedelta(seconds=wait_seconds)
