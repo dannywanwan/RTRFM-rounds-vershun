@@ -40,20 +40,23 @@ class RtrfmEpisodeCard extends HTMLElement {
     this._render();
     try {
       const items = [];
-      const visit = async (media_content_id, depth, insideRoundsFolder = false) => {
-        const result = await this._hass.callWS({
-          type: "media_source/browse_media",
-          media_content_id,
-        });
+      const visit = async (media_content_id, depth) => {
+        let result;
+        try {
+          result = await this._hass.callWS({
+            type: "media_source/browse_media",
+            media_content_id,
+          });
+        } catch (error) {
+          if (depth === 0) throw error;
+          return;
+        }
         for (const item of result.children || []) {
           const name = String(item.title || item.media_content_id || "");
-          const location = name.toLowerCase();
-          const isQnap = /qnap_rtrfm/.test(location);
-          const isRoundsFolder = /the rounds|therounds|rtrfm/.test(location);
-          if (/\.(mp3|m4a|mp4|aac|wav|ogg|flac)$/i.test(name)) {
-            if (insideRoundsFolder && !isQnap) items.push(item);
-          } else if (depth < 4 && item.can_expand && item.media_content_id) {
-            await visit(item.media_content_id, depth + 1, insideRoundsFolder || isRoundsFolder);
+          if (/^the rounds\s*-/i.test(name) && /\.(mp3|m4a|mp4|aac|wav|ogg|flac)$/i.test(name)) {
+            items.push(item);
+          } else if (depth < 6 && item.media_content_id && (item.can_expand || item.media_class === "directory")) {
+            await visit(item.media_content_id, depth + 1);
           }
         }
       };

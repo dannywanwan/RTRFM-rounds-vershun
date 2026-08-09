@@ -1,5 +1,5 @@
 name: RTRFM Audio Archive
-version: 1.5.0
+version: 1.6.0
 slug: rtrfm_audio_archive
 description: Downloads and keeps The Rounds episodes in Home Assistant media storage.
 url: https://github.com/dannywanwan/RTRFM-rounds-vershun
