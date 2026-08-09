@@ -157,22 +157,34 @@ def run_once(session: requests.Session, lookback_days: int) -> None:
     log.info("Current local episode: %s", latest)
 
 
+def seconds_until_sunday(hour: int) -> float:
+    now = dt.datetime.now(TIMEZONE)
+    target = now.replace(hour=hour, minute=0, second=0, microsecond=0)
+    days_until_sunday = (6 - now.weekday()) % 7
+    target += dt.timedelta(days=days_until_sunday)
+    if target <= now:
+        target += dt.timedelta(days=7)
+    return (target - now).total_seconds()
+
+
 def main() -> None:
     install_dashboard_card()
     options_path = Path("/data/options.json")
     options = json.loads(options_path.read_text()) if options_path.exists() else {}
-    interval_hours = max(1, int(options.get("interval_hours", 24)))
     lookback_days = max(7, int(options.get("lookback_days", 35)))
+    sunday_hour = min(23, max(0, int(options.get("sunday_hour", 3))))
     session = requests.Session()
     session.headers.update({"User-Agent": "RTRFM-The-Rounds-Home-Assistant/1.0"})
 
     while True:
+        wait_seconds = seconds_until_sunday(sunday_hour)
+        next_run = dt.datetime.now(TIMEZONE) + dt.timedelta(seconds=wait_seconds)
+        log.info("Next weekly check at %s.", next_run.strftime("%Y-%m-%d %H:%M %Z"))
+        time.sleep(wait_seconds)
         try:
             run_once(session, lookback_days)
         except Exception:
             log.exception("The archive check failed; it will retry later.")
-        log.info("Next check in %s hours.", interval_hours)
-        time.sleep(interval_hours * 60 * 60)
 
 
 if __name__ == "__main__":

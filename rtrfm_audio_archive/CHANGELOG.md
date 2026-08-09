@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.0
+
+- Replaced the daily polling loop with one scheduled check every Sunday at 3:00am Australia/Perth time.
+- Added a configurable `sunday_hour` option.
+- Kept `interval_hours` for compatibility with existing app settings; it is no longer used.
+
 ## 1.9.0
 
 - Sends Sonos the supported generic `music` media type instead of the detected `audio/mp4` type.
