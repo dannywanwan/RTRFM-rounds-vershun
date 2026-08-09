@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.0
+
+- Limits the dashboard list to audio files inside the `The Rounds` folder.
+- Excludes audio files from other media folders and QNAP branches.
+
 ## 1.7.0
 
 - Searches both Media Source root forms for audio files.
