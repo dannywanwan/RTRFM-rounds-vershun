@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.16.0
+
+- Added Saturday replay downloads for Trainwreck using RTRFM slug `trainwreck`.
+- Keeps Trainwreck files locally in `/media/rtrfm/Trainwreck/`.
+- Adds a stable `Trainwreck - Latest.mp3` and dated episode files.
+
 ## 1.15.0
 
 - Added a configurable show name to the Lovelace card.

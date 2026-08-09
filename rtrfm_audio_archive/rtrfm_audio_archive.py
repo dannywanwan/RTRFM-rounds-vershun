@@ -46,6 +46,7 @@ class Show:
 SHOWS = (
     Show("The Rounds", "therounds", Path("/config/latest-date")),
     Show("Jamdown Vershun", "jamdown", Path("/config/jamdown-vershun-latest-date")),
+    Show("Trainwreck", "trainwreck", Path("/config/trainwreck-latest-date")),
 )
 
 
