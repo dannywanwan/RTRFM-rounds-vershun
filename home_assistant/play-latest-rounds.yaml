@@ -1,0 +1,10 @@
+play_latest_rounds:
+  alias: Play latest The Rounds
+  mode: restart
+  sequence:
+    - action: media_player.play_media
+      target:
+        entity_id: media_player.dining_room_2
+      data:
+        media_content_id: media-source://media_source/local/rtrfm/The Rounds/The Rounds - Latest.mp3
+        media_content_type: music
