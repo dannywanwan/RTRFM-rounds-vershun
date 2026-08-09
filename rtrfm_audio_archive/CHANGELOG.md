@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.0
+
+- Added an automatic cache-busting loader for the Lovelace card.
+- Future card updates no longer require changing the dashboard resource URL.
+- The loader fetches the current implementation whenever the dashboard loads.
+
 ## 1.11.0
 
 - Locks the dashboard card to the confirmed Media Source folder `rtrfm/The Rounds`.

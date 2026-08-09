@@ -5,6 +5,7 @@ RUN apk add --no-cache python3 py3-requests tzdata
 COPY run.sh /run.sh
 COPY rtrfm_audio_archive.py /rtrfm_audio_archive.py
 COPY rtrfm-episode-card.js /rtrfm-episode-card.js
+COPY rtrfm-episode-card-impl.js /rtrfm-episode-card-impl.js
 
 RUN chmod a+x /run.sh
 

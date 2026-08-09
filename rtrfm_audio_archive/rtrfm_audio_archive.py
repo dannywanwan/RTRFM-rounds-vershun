@@ -22,6 +22,8 @@ LATEST_FILE = LOCAL_DIR / f"{SHOW_NAME} - Latest.mp3"
 LATEST_DATE_FILE = Path("/config/latest-date")
 CARD_SOURCE = Path("/rtrfm-episode-card.js")
 CARD_DESTINATION = Path("/homeassistant/www/rtrfm-episode-card.js")
+CARD_IMPL_SOURCE = Path("/rtrfm-episode-card-impl.js")
+CARD_IMPL_DESTINATION = Path("/homeassistant/www/rtrfm-episode-card-impl.js")
 TIMEZONE = ZoneInfo("Australia/Perth")
 REQUEST_TIMEOUT = (20, 60)
 
@@ -35,11 +37,18 @@ def install_dashboard_card() -> None:
         return
     try:
         CARD_DESTINATION.parent.mkdir(parents=True, exist_ok=True)
-        if not CARD_DESTINATION.exists() or CARD_DESTINATION.read_bytes() != CARD_SOURCE.read_bytes():
-            temporary = CARD_DESTINATION.with_suffix(".js.part")
-            temporary.write_bytes(CARD_SOURCE.read_bytes())
-            temporary.replace(CARD_DESTINATION)
-            log.info("Installed dashboard card at %s", CARD_DESTINATION)
+        for source, destination in (
+            (CARD_SOURCE, CARD_DESTINATION),
+            (CARD_IMPL_SOURCE, CARD_IMPL_DESTINATION),
+        ):
+            if not source.exists():
+                log.warning("Dashboard card source is missing: %s", source)
+                continue
+            if not destination.exists() or destination.read_bytes() != source.read_bytes():
+                temporary = destination.with_suffix(".js.part")
+                temporary.write_bytes(source.read_bytes())
+                temporary.replace(destination)
+                log.info("Installed dashboard card file at %s", destination)
     except OSError as exc:
         log.error("Could not install dashboard card: %s", exc)
 
