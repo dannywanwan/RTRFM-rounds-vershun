@@ -11,10 +11,11 @@ export default class RtrfmEpisodeCard extends HTMLElement {
     if (!config || !config.entity) {
       throw new Error("RTRFM Episodes card requires a media_player entity");
     }
+    const show = config.show || "The Rounds";
     this._config = {
-      title: "The Rounds",
+      title: show,
       entity: config.entity,
-      roots: ["media-source://media_source/local/rtrfm/The Rounds"],
+      roots: [`media-source://media_source/local/rtrfm/${show}`],
       ...config,
     };
     this._render();

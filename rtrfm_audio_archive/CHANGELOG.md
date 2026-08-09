@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.15.0
+
+- Added a configurable show name to the Lovelace card.
+- Added a separate Jamdown Vershun card configuration.
+- The Rounds and Jamdown episode lists remain independent.
+
 ## 1.14.0
 
 - Runs one check when the app starts, then continues with the weekly Sunday schedule.

@@ -22,6 +22,16 @@ type: custom:rtrfm-episode-card
 entity: media_player.dining_room_2
 ```
 
+To add a separate Jamdown Vershun card, use:
+
+```yaml
+type: custom:rtrfm-episode-card
+show: Jamdown Vershun
+entity: media_player.dining_room_2
+```
+
+The two cards are independent and do not mix their episode lists.
+
 After adding a new file, use the refresh button in the card.
 
 Keep the resource URL stable without a version query. The Home Assistant app
