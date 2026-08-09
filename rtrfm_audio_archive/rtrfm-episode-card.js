@@ -14,7 +14,7 @@ class RtrfmEpisodeCard extends HTMLElement {
     this._config = {
       title: "The Rounds",
       entity: config.entity,
-      roots: ["media-source://media_source/local"],
+      roots: ["media-source://media_source", "media-source://media_source/local"],
       ...config,
     };
     this._render();
@@ -48,12 +48,11 @@ class RtrfmEpisodeCard extends HTMLElement {
             media_content_id,
           });
         } catch (error) {
-          if (depth === 0) throw error;
           return;
         }
         for (const item of result.children || []) {
           const name = String(item.title || item.media_content_id || "");
-          if (/^the rounds\s*-/i.test(name) && /\.(mp3|m4a|mp4|aac|wav|ogg|flac)$/i.test(name)) {
+          if (/\.(mp3|m4a|mp4|aac|wav|ogg|flac)$/i.test(name)) {
             items.push(item);
           } else if (depth < 6 && item.media_content_id && (item.can_expand || item.media_class === "directory")) {
             await visit(item.media_content_id, depth + 1);

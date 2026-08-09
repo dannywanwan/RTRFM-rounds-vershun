@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.0
+
+- Searches both Media Source root forms for audio files.
+- Removed filename and folder-name assumptions that could hide valid episodes.
+- Ignores unavailable Media Source branches while continuing the search.
+
 ## 1.6.0
 
 - Improved the Lovelace card search so it finds `The Rounds - ...` audio files across the local Media Source tree.
