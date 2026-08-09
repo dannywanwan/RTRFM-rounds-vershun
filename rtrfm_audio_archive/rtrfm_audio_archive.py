@@ -7,6 +7,7 @@ import datetime as dt
 import json
 import logging
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlencode, urlparse
 from zoneinfo import ZoneInfo
@@ -14,12 +15,8 @@ from zoneinfo import ZoneInfo
 import requests
 
 
-SHOW_NAME = "The Rounds"
-SHOW_SLUG = "therounds"
 RESTREAM_ENDPOINT = "https://restreams.rtrfm.com.au/rzz"
-LOCAL_DIR = Path("/media/rtrfm") / SHOW_NAME
-LATEST_FILE = LOCAL_DIR / f"{SHOW_NAME} - Latest.mp3"
-LATEST_DATE_FILE = Path("/config/latest-date")
+LOCAL_ROOT = Path("/media/rtrfm")
 CARD_SOURCE = Path("/rtrfm-episode-card.js")
 CARD_DESTINATION = Path("/homeassistant/www/rtrfm-episode-card.js")
 CARD_IMPL_SOURCE = Path("/rtrfm-episode-card-impl.js")
@@ -29,6 +26,27 @@ REQUEST_TIMEOUT = (20, 60)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("rtrfm-audio-archive")
+
+
+@dataclass(frozen=True)
+class Show:
+    name: str
+    slug: str
+    latest_state_file: Path
+
+    @property
+    def local_dir(self) -> Path:
+        return LOCAL_ROOT / self.name
+
+    @property
+    def latest_file(self) -> Path:
+        return self.local_dir / f"{self.name} - Latest.mp3"
+
+
+SHOWS = (
+    Show("The Rounds", "therounds", Path("/config/latest-date")),
+    Show("Jamdown Vershun", "jamdown", Path("/config/jamdown-vershun-latest-date")),
+)
 
 
 def install_dashboard_card() -> None:
@@ -53,13 +71,18 @@ def install_dashboard_card() -> None:
         log.error("Could not install dashboard card: %s", exc)
 
 
-def available_dates(session: requests.Session, today: dt.date, lookback_days: int) -> dict[dt.date, str]:
+def available_dates(
+    session: requests.Session,
+    show: Show,
+    today: dt.date,
+    lookback_days: int,
+) -> dict[dt.date, str]:
     first_day = today - dt.timedelta(days=lookback_days)
     found: dict[dt.date, str] = {}
     cursor = first_day
     while cursor <= today:
         if cursor.weekday() == 5:
-            params = urlencode({"n": SHOW_SLUG, "d": cursor.isoformat()})
+            params = urlencode({"n": show.slug, "d": cursor.isoformat()})
             response = session.get(f"{RESTREAM_ENDPOINT}?{params}", timeout=REQUEST_TIMEOUT)
             if response.status_code == 404:
                 cursor += dt.timedelta(days=1)
@@ -72,8 +95,8 @@ def available_dates(session: requests.Session, today: dt.date, lookback_days: in
     return found
 
 
-def matching_file(folder: Path, episode_date: dt.date) -> Path | None:
-    prefix = f"{SHOW_NAME} - {episode_date.isoformat()}"
+def matching_file(folder: Path, show: Show, episode_date: dt.date) -> Path | None:
+    prefix = f"{show.name} - {episode_date.isoformat()}"
     if not folder.exists():
         return None
     for path in sorted(folder.glob(f"{prefix}.*")):
@@ -109,61 +132,70 @@ def download_to(session: requests.Session, episode_date: dt.date, url: str, dest
             partial.unlink()
 
 
-def download_dated(session: requests.Session, episode_date: dt.date, url: str, folder: Path) -> Path | None:
+def download_dated(session: requests.Session, show: Show, episode_date: dt.date, url: str) -> Path | None:
+    folder = show.local_dir
     folder.mkdir(parents=True, exist_ok=True)
-    destination = folder / f"{SHOW_NAME} - {episode_date.isoformat()}{extension_for(url)}"
-    existing = matching_file(folder, episode_date)
+    destination = folder / f"{show.name} - {episode_date.isoformat()}{extension_for(url)}"
+    existing = matching_file(folder, show, episode_date)
     if existing:
         log.info("Already present: %s", existing)
         return existing
     return download_to(session, episode_date, url, destination)
 
 
-def latest_date_on_disk() -> dt.date | None:
+def latest_date_on_disk(show: Show) -> dt.date | None:
     try:
-        return dt.date.fromisoformat(LATEST_DATE_FILE.read_text().strip())
+        return dt.date.fromisoformat(show.latest_state_file.read_text().strip())
     except (OSError, ValueError):
         return None
 
 
-def save_latest(session: requests.Session, episode_date: dt.date, url: str) -> Path | None:
-    if LATEST_FILE.exists() and latest_date_on_disk() == episode_date:
-        log.info("Latest file is current: %s", LATEST_FILE)
-        return LATEST_FILE
+def save_latest(session: requests.Session, show: Show, episode_date: dt.date, url: str) -> Path | None:
+    if show.latest_file.exists() and latest_date_on_disk(show) == episode_date:
+        log.info("Latest file is current for %s: %s", show.name, show.latest_file)
+        return show.latest_file
 
-    downloaded = download_to(session, episode_date, url, LATEST_FILE)
+    downloaded = download_to(session, episode_date, url, show.latest_file)
     if downloaded is None:
         return None
-    LATEST_DATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    LATEST_DATE_FILE.write_text(episode_date.isoformat() + "\n")
-    for legacy in LOCAL_DIR.glob(f"{SHOW_NAME} - Latest.*"):
-        if legacy != LATEST_FILE and legacy.is_file():
+    show.latest_state_file.parent.mkdir(parents=True, exist_ok=True)
+    show.latest_state_file.write_text(episode_date.isoformat() + "\n")
+    for legacy in show.local_dir.glob(f"{show.name} - Latest.*"):
+        if legacy != show.latest_file and legacy.is_file():
             legacy.unlink()
             log.info("Removed obsolete latest file: %s", legacy)
     return downloaded
 
 
-def run_once(session: requests.Session, lookback_days: int) -> None:
+def run_show(session: requests.Session, show: Show, lookback_days: int) -> None:
     today = dt.datetime.now(TIMEZONE).date()
-    episodes = available_dates(session, today, lookback_days)
+    episodes = available_dates(session, show, today, lookback_days)
     if not episodes:
-        log.info("No available %s episodes found.", SHOW_NAME)
+        log.info("No available %s episodes found.", show.name)
         return
 
     latest_date = max(episodes)
-    latest = save_latest(session, latest_date, episodes[latest_date])
+    latest = save_latest(session, show, latest_date, episodes[latest_date])
     if latest is None:
-        log.warning("Latest episode %s could not be downloaded; leaving existing files untouched.", latest_date)
+        log.warning("Latest %s episode %s could not be downloaded; leaving existing files untouched.", show.name, latest_date)
         return
 
     for episode_date, url in sorted(episodes.items()):
         if episode_date == latest_date:
             continue
-        local = matching_file(LOCAL_DIR, episode_date)
+        local = matching_file(show.local_dir, show, episode_date)
         if local is None:
-            download_dated(session, episode_date, url, LOCAL_DIR)
+            download_dated(session, show, episode_date, url)
 
-    log.info("Current local episode: %s", latest)
+    log.info("Current local %s episode: %s", show.name, latest)
+
+
+def run_once(session: requests.Session, lookback_days: int) -> None:
+    for show in SHOWS:
+        try:
+            run_show(session, show, lookback_days)
+        except Exception:
+            log.exception("The %s check failed; continuing with the other shows.", show.name)
 
 
 def seconds_until_sunday(hour: int) -> float:

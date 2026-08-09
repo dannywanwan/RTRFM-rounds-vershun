@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.13.0
+
+- Added Saturday replay downloads for Jamdown Vershun using RTRFM slug `jamdown`.
+- Keeps Jamdown files locally in `/media/rtrfm/Jamdown Vershun/`.
+- Adds a stable `Jamdown Vershun - Latest.mp3` and dated episode files.
+- Keeps The Rounds download and state handling unchanged.
+
 ## 1.12.0
 
 - Added an automatic cache-busting loader for the Lovelace card.
