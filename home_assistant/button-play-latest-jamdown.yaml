@@ -1,0 +1,6 @@
+type: button
+name: Play latest Jamdown
+icon: mdi:play
+tap_action:
+  action: perform-action
+  perform_action: script.play_latest_jamdown

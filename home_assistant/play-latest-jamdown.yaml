@@ -1,0 +1,10 @@
+play_latest_jamdown:
+  alias: Play latest Jamdown Vershun
+  mode: restart
+  sequence:
+    - action: media_player.play_media
+      target:
+        entity_id: media_player.dining_room_2
+      data:
+        media_content_id: media-source://media_source/local/rtrfm/Jamdown Vershun/Jamdown Vershun - Latest.mp3
+        media_content_type: music
