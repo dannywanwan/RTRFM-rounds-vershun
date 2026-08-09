@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.0
+
+- Sends Sonos the supported generic `music` media type instead of the detected `audio/mp4` type.
+- Keeps the dashboard resource URL stable so future app updates do not require changing the resource entry.
+
 ## 1.8.0
 
 - Limits the dashboard list to audio files inside the `The Rounds` folder.

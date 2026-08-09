@@ -98,7 +98,7 @@ class RtrfmEpisodeCard extends HTMLElement {
       await this._hass.callService("media_player", "play_media", {
         entity_id: this._config.entity,
         media_content_id: mediaUrl || episode.media_content_id,
-        media_content_type: resolved.mime_type || episode.media_content_type || "audio/mpeg",
+        media_content_type: "music",
       });
     } catch (error) {
       this._error = error?.message || "Could not play episode";

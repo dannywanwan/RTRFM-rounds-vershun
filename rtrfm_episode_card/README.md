@@ -24,6 +24,9 @@ entity: media_player.dining_room_2
 
 After adding a new file, use the refresh button in the card.
 
+Keep the resource URL stable without a version query. The Home Assistant app
+updates the file at that URL automatically whenever the app is updated.
+
 ## Optional configuration
 
 The title and media roots can be changed:
