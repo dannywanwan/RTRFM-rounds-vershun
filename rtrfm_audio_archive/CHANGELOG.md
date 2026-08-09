@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.11.0
+
+- Locks the dashboard card to the confirmed Media Source folder `rtrfm/The Rounds`.
+- Removes the broad media-tree scan.
+
 ## 1.10.0
 
 - Replaced the daily polling loop with one scheduled check every Sunday at 3:00am Australia/Perth time.

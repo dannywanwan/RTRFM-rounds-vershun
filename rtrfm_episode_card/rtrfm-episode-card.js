@@ -14,7 +14,7 @@ class RtrfmEpisodeCard extends HTMLElement {
     this._config = {
       title: "The Rounds",
       entity: config.entity,
-      roots: ["media-source://media_source", "media-source://media_source/local"],
+      roots: ["media-source://media_source/local/rtrfm/The Rounds"],
       ...config,
     };
     this._render();
@@ -40,7 +40,7 @@ class RtrfmEpisodeCard extends HTMLElement {
     this._render();
     try {
       const items = [];
-      const visit = async (media_content_id, depth, inRoundsFolder = false, inQnapFolder = false) => {
+      const visit = async (media_content_id, depth) => {
         let result;
         try {
           result = await this._hass.callWS({
@@ -52,13 +52,10 @@ class RtrfmEpisodeCard extends HTMLElement {
         }
         for (const item of result.children || []) {
           const name = String(item.title || item.media_content_id || "");
-          const branch = `${name} ${item.media_content_id || ""}`.toLowerCase();
-          const roundsHere = inRoundsFolder || /the rounds/.test(name.toLowerCase());
-          const qnapHere = inQnapFolder || /qnap/.test(branch);
           if (/\.(mp3|m4a|mp4|aac|wav|ogg|flac)$/i.test(name)) {
-            if (roundsHere && !qnapHere) items.push(item);
+            items.push(item);
           } else if (depth < 6 && item.media_content_id && (item.can_expand || item.media_class === "directory")) {
-            await visit(item.media_content_id, depth + 1, roundsHere, qnapHere);
+            await visit(item.media_content_id, depth + 1);
           }
         }
       };
