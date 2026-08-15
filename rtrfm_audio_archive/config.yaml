@@ -1,5 +1,5 @@
 name: RTRFM Audio Archive
-version: 1.17.0
+version: 1.18.0
 slug: rtrfm_audio_archive
 description: Downloads and keeps The Rounds, Jamdown Vershun, and Trainwreck episodes in Home Assistant media storage.
 url: https://github.com/dannywanwan/RTRFM-rounds-vershun

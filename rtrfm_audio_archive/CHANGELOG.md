@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.18.0
+
+- Added a square app icon for the Home Assistant add-on.
+
 ## 1.17.0
 
 - Calculates total local storage used by all downloaded RTRFM audio.
