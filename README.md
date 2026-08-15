@@ -4,8 +4,9 @@ This project fetches RTRFM tracklists for:
 
 - The Rounds
 - Jamdown Vershun
+- Trainwreck
 
-It writes Playlisty-friendly text files and keeps the full dated archive in this repository.
+It writes Playlisty-friendly text files and keeps the full dated archive in this repository. `RTRFM Tracklists.txt` is the combined perpetual archive for all tracked shows, with one dated section per show and episode.
 
 ## The Rounds audio proof of concept
 
@@ -35,16 +36,23 @@ The repository root keeps every generated dated export forever:
 
 - `The Rounds - YYYY-MM-DD.txt`
 - `Jamdown Vershun - YYYY-MM-DD.txt`
+- `Trainwreck - YYYY-MM-DD.txt`
+
+The combined perpetual tracklist archive is:
+
+- `RTRFM Tracklists.txt`
 
 The repository root also keeps convenience latest files:
 
 - `The Rounds - Latest.txt`
 - `Jamdown Vershun - Latest.txt`
+- `Trainwreck - Latest.txt`
 
 The `Playlisty/` folder contains only the latest files, so it is the cleanest place to look when importing into Playlisty:
 
 - `Playlisty/The Rounds - Latest.txt`
 - `Playlisty/Jamdown Vershun - Latest.txt`
+- `Playlisty/Trainwreck - Latest.txt`
 
 ## Automatic GitHub run
 
@@ -55,6 +63,7 @@ Each successful run:
 - installs the Python dependencies from `requirements.txt`
 - fetches the RTRFM tracklists
 - commits changed `.txt` playlist files back to `main`
+- commits the combined `RTRFM Tracklists.txt` archive back to `main`
 - uploads a `playlisty-text` artifact to the workflow run
 - preserves `.rtrfm_state.json` in the Actions cache without committing it
 
@@ -72,6 +81,8 @@ That command downloads the latest Playlisty text files from GitHub into this loc
 
 - `The Rounds - *.txt`
 - `Jamdown Vershun - *.txt`
+- `Trainwreck - *.txt`
+- `RTRFM Tracklists.txt`
 - `Playlisty/*.txt`
 
 It does not update code or workflow files.

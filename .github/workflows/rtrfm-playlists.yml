@@ -77,6 +77,8 @@ jobs:
           path: |
             The Rounds - *.txt
             Jamdown Vershun - *.txt
+            Trainwreck - *.txt
+            RTRFM Tracklists.txt
             Playlisty/*.txt
           if-no-files-found: error
 
@@ -84,7 +86,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "The Rounds - "*.txt "Jamdown Vershun - "*.txt Playlisty/*.txt
+          git add "The Rounds - "*.txt "Jamdown Vershun - "*.txt "Trainwreck - "*.txt "RTRFM Tracklists.txt" Playlisty/*.txt
           if git diff --cached --quiet; then
             echo "No playlist text changes to commit."
           else

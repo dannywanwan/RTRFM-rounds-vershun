@@ -18,6 +18,10 @@ SHOWS = [
         "name": "Jamdown Vershun",
         "url": "https://rtrfm.com.au/shows/jamdown/",
     },
+    {
+        "name": "Trainwreck",
+        "url": "https://rtrfm.com.au/shows/trainwreck/",
+    },
 ]
 STOP_LINES = {
     "Episode recap",
@@ -26,11 +30,12 @@ STOP_LINES = {
 }
 TIMESTAMP_RE = re.compile(r"(?:\d{1,2}:\d{2}|--:--)")  # RTRFM timestamps
 STATE_FILE = ".rtrfm_state.json"
+TRACKLIST_ARCHIVE = "RTRFM Tracklists.txt"
 SCHEDULE_WEEKDAY = 6  # Python weekday: Monday is 0, Sunday is 6.
 SCHEDULE_TIME = time(hour=10)
 
 
-def fetch_tracks(show):
+def fetch_show(show):
     response = requests.get(
         show["url"],
         headers={"User-Agent": "Mozilla/5.0"},
@@ -45,6 +50,8 @@ def fetch_tracks(show):
         for line in soup.get_text("\n").splitlines()
     ]
     lines = [line for line in lines if line]
+
+    episode_date = extract_episode_date(lines)
 
     try:
         start = lines.index("Tracklist") + 1
@@ -84,6 +91,46 @@ def fetch_tracks(show):
 
         i += 1
 
+    return episode_date, tracks
+
+
+def extract_episode_date(lines):
+    month_names = {
+        "january": 1,
+        "february": 2,
+        "march": 3,
+        "april": 4,
+        "may": 5,
+        "june": 6,
+        "july": 7,
+        "august": 8,
+        "september": 9,
+        "october": 10,
+        "november": 11,
+        "december": 12,
+    }
+    date_re = re.compile(r"^(\d{1,2})(?:st|nd|rd|th)\s+([A-Za-z]+)$", re.IGNORECASE)
+
+    try:
+        episode_index = lines.index("Episode")
+    except ValueError:
+        return date.today()
+
+    for line in lines[episode_index + 1 : episode_index + 8]:
+        match = date_re.fullmatch(line)
+        if not match:
+            continue
+        month = month_names.get(match.group(2).lower())
+        if month is None:
+            continue
+        return date(datetime.now().year, month, int(match.group(1)))
+
+    return date.today()
+
+
+def fetch_tracks(show):
+    """Compatibility wrapper returning only the tracklist."""
+    _, tracks = fetch_show(show)
     return tracks
 
 
@@ -103,6 +150,28 @@ def save_playlist(show, tracks, playlist_date, output_dir):
     playlisty_latest_path.write_text(content, encoding="utf-8")
 
     return dated_path, latest_path, playlisty_latest_path
+
+
+def update_tracklist_archive(entries, output_dir):
+    archive_path = output_dir / TRACKLIST_ARCHIVE
+    try:
+        archive = archive_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        archive = "# RTRFM Tracklists Archive\n\n"
+
+    for show, episode_date, tracks in entries:
+        marker = f"## {show['name']} — {episode_date:%Y-%m-%d}"
+        block = marker + "\n\n" + "\n".join(tracks) + "\n\n"
+        start = archive.find(marker)
+        if start >= 0:
+            next_heading = re.search(r"^## .+$", archive[start + len(marker) :], re.MULTILINE)
+            end = start + len(marker) + next_heading.start() if next_heading else len(archive)
+            archive = archive[:start] + block + archive[end:]
+        else:
+            archive += block
+
+    archive_path.write_text(archive.rstrip() + "\n", encoding="utf-8")
+    return archive_path
 
 
 def scheduled_slot_date(now):
@@ -144,30 +213,35 @@ def record_scheduled_run(state_path, slot_date):
 
 
 def run_playlists(script_dir):
-    playlist_date = date.today()
     failures = []
+    archive_entries = []
 
     for show in SHOWS:
         try:
-            tracks = fetch_tracks(show)
+            episode_date, tracks = fetch_show(show)
             dated_path, latest_path, playlisty_latest_path = save_playlist(
                 show,
                 tracks,
-                playlist_date,
+                episode_date,
                 script_dir,
             )
+            archive_entries.append((show, episode_date, tracks))
         except Exception as exc:
             failures.append((show["name"], exc))
             print(f"{show['name']}: failed: {exc}")
             continue
 
         print(f"{show['name']}: found {len(tracks)} tracks.")
+        print(f"Episode date: {episode_date}")
         print(f"Dated playlist: {dated_path}")
         print(f"Latest playlist: {latest_path}")
         print(f"Playlisty latest: {playlisty_latest_path}")
 
     if failures:
         sys.exit(1)
+
+    archive_path = update_tracklist_archive(archive_entries, script_dir)
+    print(f"Combined tracklist archive: {archive_path}")
 
 
 def main():
