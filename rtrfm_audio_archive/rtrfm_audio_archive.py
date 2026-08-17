@@ -17,6 +17,8 @@ import requests
 
 RESTREAM_ENDPOINT = "https://restreams.rtrfm.com.au/rzz"
 LOCAL_ROOT = Path("/media/rtrfm")
+TRACKLIST_SOURCE = "https://raw.githubusercontent.com/dannywanwan/RTRFM-rounds-vershun/main/RTRFM%20Tracklists.txt"
+TRACKLIST_DESTINATION = LOCAL_ROOT / "RTRFM Tracklists.txt"
 CARD_SOURCE = Path("/rtrfm-episode-card.js")
 CARD_DESTINATION = Path("/homeassistant/www/rtrfm-episode-card.js")
 CARD_IMPL_SOURCE = Path("/rtrfm-episode-card-impl.js")
@@ -97,6 +99,26 @@ def update_storage_summary() -> None:
         log.info("Local RTRFM storage: %.2f MB across %s files.", total_bytes / 1024 / 1024, file_count)
     except OSError as exc:
         log.warning("Could not update storage summary: %s", exc)
+
+
+def update_local_tracklists(session: requests.Session) -> None:
+    """Keep a browsable local copy of the perpetual tracklist archive."""
+    temporary = TRACKLIST_DESTINATION.with_suffix(".txt.part")
+    try:
+        response = session.get(TRACKLIST_SOURCE, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        content = response.text
+        if not content.strip():
+            raise ValueError("the downloaded tracklist archive was empty")
+        TRACKLIST_DESTINATION.parent.mkdir(parents=True, exist_ok=True)
+        temporary.write_text(content, encoding="utf-8")
+        temporary.replace(TRACKLIST_DESTINATION)
+        log.info("Updated local tracklist archive: %s", TRACKLIST_DESTINATION)
+    except (OSError, ValueError, requests.RequestException) as exc:
+        log.warning("Could not update local tracklist archive: %s", exc)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
 
 
 def available_dates(
@@ -250,6 +272,7 @@ def main() -> None:
         run_once(session, lookback_days)
     except Exception:
         log.exception("The startup check failed; continuing with the weekly schedule.")
+    update_local_tracklists(session)
     update_storage_summary()
 
     while True:
@@ -261,6 +284,7 @@ def main() -> None:
             run_once(session, lookback_days)
         except Exception:
             log.exception("The archive check failed; it will retry later.")
+        update_local_tracklists(session)
         update_storage_summary()
 
 

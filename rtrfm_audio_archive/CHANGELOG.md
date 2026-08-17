@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.19.0
+
+- Copies the combined `RTRFM Tracklists.txt` archive into local Home Assistant media storage.
+- Refreshes the local tracklist copy at startup and during the weekly check.
+
 ## 1.18.0
 
 - Added a square app icon for the Home Assistant add-on.
